@@ -2,6 +2,7 @@ package tfexec
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -13,11 +14,14 @@ func (tf *Terraform) runTerraformCmd(ctx context.Context, cmd *exec.Cmd) error {
 	cmd.Stdout = mergeWriters(cmd.Stdout, tf.stdout)
 	cmd.Stderr = mergeWriters(cmd.Stderr, tf.stderr, &errBuf)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		// kill children if parent is dead
-		Pdeathsig: syscall.SIGKILL,
-		// set process group ID
-		Setpgid: true,
+	// https://stackoverflow.com/questions/67419576/operation-not-permitted-when-executing-an-arbitrary-binary
+	if _, ok := os.LookupEnv("LAMBDA_TASK_ROOT"); !ok {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			// kill children if parent is dead
+			Pdeathsig: syscall.SIGKILL,
+			// set process group ID
+			Setpgid: true,
+		}
 	}
 
 	go func() {
