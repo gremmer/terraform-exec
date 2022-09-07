@@ -2,6 +2,7 @@ package tfexec
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
